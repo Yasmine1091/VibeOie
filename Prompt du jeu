@@ -1,0 +1,74 @@
+Rôle : Tu es un développeur Web Front-End expert en HTML5, CSS3 et JavaScript natif.
+
+Objectif : Crée un jeu du Jeu de l'Oie complet, interactif, responsive et jouable directement dans le navigateur. L'intégralité du code doit être contenue dans un SEUL fichier HTML (incluant le CSS dans un tag <style> et le JavaScript dans un tag <script>).
+
+Voici les spécifications détaillées et obligatoires à respecter strictement :
+
+---
+
+### 1. THÈME ET DESIGN (Hôtel & Palette Colorimétrique)
+- Univers graphique : Hôtel élégant et accueillant.
+- Palette de couleurs obligatoires :
+  * Blanc (fond, propreté, clarté)
+  * Bleu (nuances pastel, azur ou royal pour les accents et structures)
+  * Rose (rose poudré ou rose vif pour les animations, bonus/malus, pions)
+- Interface soignée, moderne, épurée et agréable (animations douces pour le lancer de dés et le déplacement des pions).
+
+---
+
+### 2. CONFIGURATION ET DÉROULEMENT DU JEU
+- Écran de démarrage / Configuration :
+  * Permettre de choisir le nombre de joueurs : entre 2 et 10 joueurs.
+  * Permettre de saisir un prénom ou d'attribuer une couleur / icône distinctive par joueur.
+  * Bouton "Lancer la partie".
+- Système de dés :
+  * Deux dés à 6 faces (valeurs de 1 à 6) lancés par tour.
+  * Animation visuelle du lancer de dés avec affichage du résultat total.
+- Affichage des tours et annonces :
+  * Afficher en très grand et de manière très visible : le prénom du joueur dont c'est le tour.
+  * Zone d'annonces géante au centre ou en haut de l'écran pour afficher en GROS les événements importants (ex: "SOPHIE TOMBE SUR LA PRISON !", "MARC RECULE DE 2 CASES !", "VICTOIRE DE LUCAS !").
+  * NE PAS afficher d'historique textuel ni de journal de bord des coups précédents (conserver uniquement l'annonce du coup actuel).
+
+---
+
+### 3. STRUCTURE DU PLATEAU DE JEU
+- Nombre de cases : Au moins 100 cases (ex: exactement 100 cases, numérotées de 1 à 100).
+- Disposition et Forme :
+  * Trajectoire en spirale ovale (ou rectangulaire arrondie) partant du HAUT À GAUCHE (Case 1) et se terminant au CENTRE DU PLATEAU (Case 100).
+  * Les cases doivent se toucher parfaitement et suivre l'ordre numérique strict (1, 2, 3... 100).
+  * Les cases NE DOIVENT PAS se chevaucher. La géométrie doit être calculée proprement en CSS/Canvas/SVG ou positionnement absolu pour une parfaite lisibilité.
+- Visuel des cases :
+  * Chaque case contient son numéro bien visible.
+  * Chaque case contient un visuel/illustration/icône SVG ou émojis explicites en rapport avec le thème de l'hôtel et le type de case (ex: 🛎️ Réception, 🛏️ Chambre, 🧼 Service de chambre, 🍸 Bar, 🏊 Piscine, 🔑 Clé, etc.).
+
+---
+
+### 4. RÈGLES DE DÉPLACEMENT ET CASES SPÉCIALES
+- Rebond / Dépassement de la case 100 :
+  * Pour gagner, le joueur doit arriver pile sur la case 100.
+  * Si le total du lancer de dés fait dépasser la case 100, le joueur avance jusqu'à la case 100 puis recule du nombre de cases restant (ex: sur la case 98, lancer de 5 -> va sur la 100 et recule de 3 jusqu'à la case 97).
+
+- Cases Malus (réparties sur le plateau avec illustrations claires) :
+  * Prison / Chambre fermée (ex: perte des clés) : Le joueur saute son tour pendant 2 tours.
+  * Ascenseur en panne / Reculer : Recule de 2 cases.
+  * Départ immédiat : Retourne directement à la case 1 (Départ).
+
+- Cases Bonus (réparties sur le plateau) :
+  * Room Service express : Avance de 2 cases.
+  * Cocktail offert : Relancer les dés immédiatement.
+
+---
+
+### 5. CONDITION DE FIN DE PARTIE
+- Lorsqu'un joueur atteint exactement la case 100, il est qualifié/gagnant et se retire du plateau.
+- La partie continue pour les autres joueurs.
+- La partie S'ARRÊTE SEULEMENT lorsqu'il ne reste plus qu'un seul joueur sur le plateau (le dernier perdant). Un écran de fin affiche le classement final de tous les joueurs.
+
+---
+
+### 6. EXIGENCES TECHNIQUES (Code HTML/CSS/JS)
+- Fichier unique HTML index.html, auto-contenu et fonctionnel sans dépendance externe obligatoire.
+- Code JavaScript clair, modulaire, bien commenté et exempt de bugs de boucle infinie ou de chevauchement de pions.
+- Responsive design : le plateau s'adapte à la taille de l'écran.
+
+Génère maintenant l'intégralité du code HTML, CSS et JavaScript fonctionnel.
