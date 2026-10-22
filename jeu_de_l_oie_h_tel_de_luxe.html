@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jeu de l'Oie - Hôtel de Luxe</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Playfair+Display:ital,wght@0,600;0,800;1,600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            hotel: {
+              white: '#FFFFFF',
+              cream: '#FAFAFD',
+              blueLight: '#EBF3FF',
+              blueSoft: '#70A1FF',
+              blueRoyal: '#1E3799',
+              pinkLight: '#FFF0F5',
+              pinkSoft: '#FF85A1',
+              pinkDeep: '#D63031',
+              pinkAccent: '#FF4757',
+              gold: '#E1B12C'
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            serif: ['"Playfair Display"', 'serif']
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background: linear-gradient(135deg, #EBF3FF 0%, #FAFAFD 50%, #FFF0F5 100%);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      user-select: none;
+    }
+    
+    .glass-card {
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      box-shadow: 0 20px 40px -15px rgba(30, 55, 153, 0.08);
+    }
+
+    /* Dice 3D Animation & Styling */
+    .dice-container {
+      perspective: 600px;
+    }
+    .dice {
+      width: 52px;
+      height: 52px;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 1s cubic-bezier(0.17, 0.67, 0.83, 0.67);
+    }
+    .dice-face {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: white;
+      border: 2px solid #1E3799;
+      border-radius: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      padding: 6px;
+      justify-content: space-between;
+      align-content: space-between;
+      box-shadow: inset 0 0 8px rgba(0,0,0,0.06), 0 4px 8px rgba(30,55,153,0.15);
+    }
+    .dot {
+      width: 9px;
+      height: 9px;
+      background-color: #FF4757;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    /* Custom Board Spiral Styling */
+    #board-container {
+      position: relative;
+      width: 100%;
+      max-width: 960px;
+      aspect-ratio: 16 / 11;
+      margin: 0 auto;
+    }
+
+    .tile {
+      position: absolute;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      transition: all 0.25s ease;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      border: 1px solid rgba(30, 55, 153, 0.12);
+      overflow: hidden;
+      cursor: default;
+    }
+
+    .tile-number {
+      position: absolute;
+      top: 2px;
+      left: 3px;
+      font-size: 9px;
+      opacity: 0.75;
+      line-height: 1;
+    }
+
+    .tile-icon {
+      font-size: 15px;
+      margin-top: 4px;
+    }
+
+    /* Player Pawn Tokens */
+    .pawn {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2px solid white;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+      position: absolute;
+      transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: bold;
+      color: white;
+    }
+
+    /* Pulse effects for current player & announcements */
+    @keyframes pulse-banner {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+    }
+    .announcement-active {
+      animation: pulse-banner 0.5s ease-in-out 2;
+    }
+
+    /* Custom Scrollbar for sleek UI */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #EBF3FF;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #70A1FF;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="min-h-screen text-slate-800 flex flex-col justify-between p-2 sm:p-4">
+
+  <!-- TOP HEADER -->
+  <header class="text-center py-2 mb-2">
+    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/80 border border-slate-200 shadow-sm mb-1">
+      <span class="text-lg">🛎️</span>
+      <h1 class="font-serif text-xl sm:text-2xl font-bold tracking-tight text-hotel-blueRoyal">
+        Grand Hôtel de Luxe <span class="text-hotel-pinkSoft">— Jeu de l'Oie</span>
+      </h1>
+    </div>
+  </header>
+
+  <!-- SETUP SCREEN (PLAYER CREATION) -->
+  <main id="setup-screen" class="max-w-2xl mx-auto w-full glass-card rounded-2xl p-6 sm:p-8 my-auto">
+    <div class="text-center mb-6">
+      <h2 class="font-serif text-2xl font-bold text-hotel-blueRoyal">Bienvenue à l'Hôtel</h2>
+      <p class="text-slate-500 text-sm mt-1">Configurez les clients (2 à 10 joueurs) pour commencer la course au Palace !</p>
+    </div>
+
+    <!-- Player count selection -->
+    <div class="mb-6">
+      <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">Nombre de Clients :</label>
+      <div class="flex items-center gap-3">
+        <input type="range" id="player-count-slider" min="2" max="10" value="4" class="w-full accent-hotel-pinkSoft h-2 bg-slate-200 rounded-lg cursor-pointer">
+        <span id="player-count-display" class="font-bold text-xl text-hotel-blueRoyal bg-hotel-blueLight px-4 py-1 rounded-xl border border-blue-200">4</span>
+      </div>
+    </div>
+
+    <!-- Player details form -->
+    <div id="player-inputs-container" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6 max-h-[320px] overflow-y-auto pr-1">
+      <!-- Dynamic Javascript Generation of player inputs -->
+    </div>
+
+    <button onclick="startGame()" class="w-full py-4 bg-gradient-to-r from-hotel-blueRoyal via-hotel-blueSoft to-hotel-pinkSoft text-white font-bold rounded-xl shadow-lg hover:opacity-95 transition active:scale-[0.99] text-lg flex items-center justify-center gap-2">
+      <span>🔑</span> Débuter la Réservation & Jouer
+    </button>
+  </main>
+
+  <!-- MAIN GAME SCREEN (Hidden by default) -->
+  <main id="game-screen" class="hidden max-w-6xl mx-auto w-full flex-col gap-3">
+
+    <!-- TOP CONTROL & ANNOUNCEMENT BAR -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch">
+      
+      <!-- Current Turn Card -->
+      <div class="lg:col-span-4 glass-card rounded-2xl p-4 flex items-center justify-between shadow-sm">
+        <div class="flex items-center gap-3">
+          <div id="current-player-badge" class="w-12 h-12 rounded-xl flex items-center justify-center text-xl shadow-md border-2 border-white text-white font-bold">
+            1
+          </div>
+          <div>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">C'est le tour de</span>
+            <h3 id="current-player-name" class="font-serif font-bold text-lg text-hotel-blueRoyal truncate max-w-[140px]">Joueur 1</h3>
+          </div>
+        </div>
+
+        <!-- Dice Action Controls -->
+        <div class="flex items-center gap-2">
+          <div id="dice-display-area" class="flex gap-1.5 bg-slate-100 p-1.5 rounded-xl border border-slate-200">
+            <div class="dice-mini w-7 h-7 bg-white rounded-md border flex items-center justify-center font-bold text-sm text-hotel-blueRoyal" id="dice1-val">?</div>
+            <div class="dice-mini w-7 h-7 bg-white rounded-md border flex items-center justify-center font-bold text-sm text-hotel-blueRoyal" id="dice2-val">?</div>
+          </div>
+          
+          <button id="roll-btn" onclick="playTurn()" class="px-4 py-2.5 bg-hotel-pinkAccent hover:bg-pink-600 text-white font-bold rounded-xl shadow-md transition active:scale-95 flex items-center gap-1.5 text-sm">
+            <span>🎲</span> Lancer
+          </button>
+        </div>
+      </div>
+
+      <!-- HUGE ANNOUNCEMENT BANNER (NO HISTORY DISPLAYED) -->
+      <div id="announcement-card" class="lg:col-span-8 glass-card rounded-2xl p-4 flex items-center justify-center bg-gradient-to-r from-white via-hotel-pinkLight to-white border-2 border-hotel-pinkSoft/30 text-center min-h-[72px]">
+        <div class="flex items-center gap-3">
+          <span class="text-2xl" id="announcement-icon">🏨</span>
+          <p id="announcement-text" class="text-lg sm:text-xl font-extrabold text-hotel-blueRoyal tracking-wide uppercase">
+            Que la partie commence ! Cliquez sur LANCER.
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- BOARD AREA & ACTIVE PLAYERS SIDEBAR -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-start">
+      
+      <!-- GAME BOARD CONTAINER -->
+      <div class="lg:col-span-9 glass-card rounded-2xl p-2 sm:p-3 relative overflow-hidden flex items-center justify-center">
+        <div id="board-container">
+          <!-- 100 Spiral Tiles Generated via JS -->
+          <!-- Pawns positioned dynamically -->
+        </div>
+      </div>
+
+      <!-- ACTIVE PLAYERS & RANKING SIDEBAR -->
+      <div class="lg:col-span-3 glass-card rounded-2xl p-4 space-y-4">
+        <h4 class="font-serif font-bold text-sm text-hotel-blueRoyal uppercase tracking-wider flex items-center gap-1.5 border-b pb-2">
+          <span>👑</span> Clients & Classement
+        </h4>
+        <div id="players-list-sidebar" class="space-y-2 max-h-[480px] overflow-y-auto pr-1">
+          <!-- Dynamic sidebar player status cards -->
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- GAME OVER / VICTORY MODAL -->
+  <div id="victory-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="glass-card max-w-md w-full rounded-2xl p-6 text-center shadow-2xl border-2 border-hotel-gold bg-white">
+      <div class="w-16 h-16 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center text-3xl mx-auto mb-3 shadow-inner">
+        🏆
+      </div>
+      <h2 class="font-serif text-2xl font-bold text-hotel-blueRoyal">Fin de la Partie !</h2>
+      <p class="text-slate-500 text-sm mb-4">Tous les clients ont atteint le Palace central.</p>
+
+      <div class="mb-6 bg-slate-50 rounded-xl p-3 border border-slate-200">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">Classement Final :</h3>
+        <ol id="final-ranking-list" class="space-y-1.5 text-left text-sm font-semibold text-slate-700">
+          <!-- Dynamic Ranking List -->
+        </ol>
+      </div>
+
+      <button onclick="location.reload()" class="w-full py-3 bg-hotel-blueRoyal text-white font-bold rounded-xl shadow-lg hover:bg-blue-900 transition">
+        🔄 Recommencer une Partie
+      </button>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="text-center text-[11px] text-slate-400 py-2">
+    Grand Hôtel de Luxe — Jeu de l'Oie HTML5 • 100 Cases en Spirale
+  </footer>
+
+  <!-- GAME LOGIC JAVASCRIPT -->
+  <script>
+    /* ==========================================================================
+       1. GAME CONSTANTS & PRESETS
+       ========================================================================== */
+    const PLAYER_COLORS = [
+      { name: 'Rose Bonbon', hex: '#FF4757', bg: 'bg-[#FF4757]' },
+      { name: 'Bleu Royal', hex: '#1E3799', bg: 'bg-[#1E3799]' },
+      { name: 'Turquoise', hex: '#00D2D3', bg: 'bg-[#00D2D3]' },
+      { name: 'Violet Saphir', hex: '#8E44AD', bg: 'bg-[#8E44AD]' },
+      { name: 'Vert Émeraude', hex: '#10AC84', bg: 'bg-[#10AC84]' },
+      { name: 'Orange Corail', hex: '#FF6B6B', bg: 'bg-[#FF6B6B]' },
+      { name: 'Jaune Or', hex: '#F1C40F', bg: 'bg-[#F1C40F]' },
+      { name: 'Magenta', hex: '#EE5253', bg: 'bg-[#EE5253]' },
+      { name: 'Bleu Ciel', hex: '#48DBFB', bg: 'bg-[#48DBFB]' },
+      { name: 'Prune VIP', hex: '#576574', bg: 'bg-[#576574]' }
+    ];
+
+    // Special Tiles Mapping according to requirements
+    // Types: 'prison', 'back_2', 'back_start', 'forward_2', 'reroll'
+    const SPECIAL_TILES = {
+      // Malus
+      12: { type: 'back_2', icon: '🛗⚠️', name: 'Ascenseur en panne', desc: 'Recule de 2 cases !' },
+      25: { type: 'prison', icon: '🗝️🔒', name: 'Suite Verrouillée', desc: 'Prison ! Saute 2 tours !' },
+      38: { type: 'back_2', icon: '🛗⚠️', name: 'Escalier bloqué', desc: 'Recule de 2 cases !' },
+      52: { type: 'back_start', icon: '🛎️💥', name: 'Bagages perdus', desc: 'Retour à la case Départ !' },
+      67: { type: 'prison', icon: '🗝️🔒', name: 'Clef égarée', desc: 'Prison ! Saute 2 tours !' },
+      81: { type: 'back_2', icon: '🛗⚠️', name: 'Service interrompu', desc: 'Recule de 2 cases !' },
+      93: { type: 'back_start', icon: '🛎️💥', name: 'Réservation annulée', desc: 'Retour à la case Départ !' },
+
+      // Bonus
+      7:  { type: 'forward_2', icon: '🛎️💨', name: 'Room Service Express', desc: 'Avance de 2 cases !' },
+      19: { type: 'reroll', icon: '🍸🎲', name: 'Cocktail de Bienvenue', desc: 'Rejoue immédiatement !' },
+      33: { type: 'forward_2', icon: '🍸💨', name: 'Pass VIP Spa', desc: 'Avance de 2 cases !' },
+      45: { type: 'reroll', icon: '🛎️🎲', name: 'Coupe de Champagne', desc: 'Rejoue immédiatement !' },
+      60: { type: 'forward_2', icon: '🛏️✨', name: 'Surclassement Suite', desc: 'Avance de 2 cases !' },
+      76: { type: 'reroll', icon: '🏊🎲', name: 'Accès Piscine Privée', desc: 'Rejoue immédiatement !' },
+      88: { type: 'forward_2', icon: '👑💨', name: 'Limousine Hôtel', desc: 'Avance de 2 cases !' }
+    };
+
+    // Generic hotel icons for normal tiles
+    const GENERIC_HOTEL_ICONS = ['🛏️', '🧼', '🗝️', '☕', '🥐', '🛎️', '🍸', '🏊', '🌴', '🛋️', '💆', '🍽️', '🚿'];
+
+    /* ==========================================================================
+       2. STATE VARIABLES
+       ========================================================================== */
+    let players = [];
+    let currentPlayerIndex = 0;
+    let isRolling = false;
+    let finishedRankings = []; // Stores winners in order of completion
+
+    /* ==========================================================================
+       3. SETUP & INITIALIZATION
+       ========================================================================== */
+    const playerCountSlider = document.getElementById('player-count-slider');
+    const playerCountDisplay = document.getElementById('player-count-display');
+    const playerInputsContainer = document.getElementById('player-inputs-container');
+
+    playerCountSlider.addEventListener('input', (e) => {
+      const count = parseInt(e.target.value);
+      playerCountDisplay.innerText = count;
+      renderPlayerSetupInputs(count);
+    });
+
+    function renderPlayerSetupInputs(count) {
+      playerInputsContainer.innerHTML = '';
+      for (let i = 0; i < count; i++) {
+        const color = PLAYER_COLORS[i % PLAYER_COLORS.length];
+        const div = document.createElement('div');
+        div.className = 'flex items-center gap-2 p-2.5 bg-slate-50 rounded-xl border border-slate-200';
+        div.innerHTML = `
+          <div class="w-7 h-7 rounded-lg ${color.bg} flex items-center justify-center text-white font-bold text-xs shadow-sm">
+            ${i+1}
+          </div>
+          <input type="text" id="player-name-${i}" value="Client ${i+1}" maxlength="12" class="flex-1 text-sm bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-hotel-pinkSoft font-semibold">
+        `;
+        playerInputsContainer.appendChild(div);
+      }
+    }
+
+    // Initial trigger for setup UI
+    renderPlayerSetupInputs(4);
+
+    /* ==========================================================================
+       4. SPIRAL COORDINATES CALCULATOR (100 TILES)
+       Winds inwards from top-left (0,0) down to center in an oval shape.
+       ========================================================================== */
+    function generateSpiralGridPositions(totalTiles = 100) {
+      // Grid dimensions for an aspect ratio matching 16:11
+      const cols = 14;
+      const rows = 10;
+      
+      let grid = Array.from({ length: rows }, () => Array(cols).fill(null));
+      let coords = [];
+
+      let left = 0, right = cols - 1;
+      let top = 0, bottom = rows - 1;
+      let count = 1;
+
+      while (count <= totalTiles && left <= right && top <= bottom) {
+        // Move Right across top row
+        for (let c = left; c <= right && count <= totalTiles; c++) {
+          coords.push({ r: top, c: c });
+          count++;
+        }
+        top++;
+
+        // Move Down right column
+        for (let r = top; r <= bottom && count <= totalTiles; r++) {
+          coords.push({ r: r, c: right });
+          count++;
+        }
+        right--;
+
+        // Move Left across bottom row
+        for (let c = right; c >= left && count <= totalTiles; c--) {
+          coords.push({ r: bottom, c: c });
+          count++;
+        }
+        bottom--;
+
+        // Move Up left column
+        for (let r = bottom; r >= top && count <= totalTiles; r--) {
+          coords.push({ r: r, c: left });
+          count++;
+        }
+        left++;
+      }
+
+      return { coords, cols, rows };
+    }
+
+    /* ==========================================================================
+       5. GAME START & BOARD RENDERING
+       ========================================================================== */
+    function startGame() {
+      const count = parseInt(playerCountSlider.value);
+      players = [];
+      finishedRankings = [];
+
+      for (let i = 0; i < count; i++) {
+        const nameInput = document.getElementById(`player-name-${i}`);
+        const name = nameInput ? nameInput.value.trim() || `Client ${i+1}` : `Client ${i+1}`;
+        const color = PLAYER_COLORS[i % PLAYER_COLORS.length];
+        
+        players.push({
+          id: i,
+          name: name,
+          color: color,
+          tile: 1, // Start on tile 1 (Top Left)
+          skipTurns: 0,
+          finished: false,
+          rank: null
+        });
+      }
+
+      document.getElementById('setup-screen').classList.add('hidden');
+      document.getElementById('game-screen').classList.remove('hidden');
+      document.getElementById('game-screen').classList.add('flex');
+
+      renderBoard();
+      updatePlayerPawns();
+      updateSidebar();
+      updateCurrentTurnUI();
+      
+      setAnnouncement("🛎️", "Bienvenue à tous ! Que la course au Palace commence !");
+    }
+
+    function renderBoard() {
+      const boardContainer = document.getElementById('board-container');
+      boardContainer.innerHTML = '';
+
+      const { coords, cols, rows } = generateSpiralGridPositions(100);
+
+      // Percentage sizing for relative layout responsiveness
+      const tileWidthPct = 100 / cols;
+      const tileHeightPct = 100 / rows;
+
+      coords.forEach((pos, index) => {
+        const tileNum = index + 1;
+        const tileEl = document.createElement('div');
+        tileEl.className = 'tile';
+        tileEl.id = `tile-${tileNum}`;
+        
+        // Positioning
+        tileEl.style.width = `calc(${tileWidthPct}% - 3px)`;
+        tileEl.style.height = `calc(${tileHeightPct}% - 3px)`;
+        tileEl.style.left = `${pos.c * tileWidthPct}%`;
+        tileEl.style.top = `${pos.r * tileHeightPct}%`;
+
+        // Styling according to tile type & hotel theme
+        const special = SPECIAL_TILES[tileNum];
+        let bgColor = '#FFFFFF';
+        let textColor = '#1E3799';
+        let icon = GENERIC_HOTEL_ICONS[tileNum % GENERIC_HOTEL_ICONS.length];
+
+        if (tileNum === 1) {
+          bgColor = '#EBF3FF';
+          icon = '🛎️';
+        } else if (tileNum === 100) {
+          bgColor = '#FF85A1';
+          textColor = '#FFFFFF';
+          icon = '👑';
+        } else if (special) {
+          icon = special.icon;
+          if (special.type === 'prison' || special.type === 'back_start' || special.type === 'back_2') {
+            bgColor = '#FFF0F5'; // Soft pink warning background
+          } else {
+            bgColor = '#F0F9FF'; // Soft blue bonus background
+          }
+        }
+
+        tileEl.style.backgroundColor = bgColor;
+        tileEl.style.color = textColor;
+
+        tileEl.innerHTML = `
+          <span class="tile-number">${tileNum}</span>
+          <span class="tile-icon">${icon}</span>
+        `;
+
+        boardContainer.appendChild(tileEl);
+      });
+
+      // Create pawn DOM elements
+      players.forEach(p => {
+        const pawn = document.createElement('div');
+        pawn.id = `pawn-${p.id}`;
+        pawn.className = `pawn ${p.color.bg}`;
+        pawn.innerText = p.id + 1;
+        boardContainer.appendChild(pawn);
+      });
+    }
+
+    /* ==========================================================================
+       6. POSITIONS & PAWNS UPDATES
+       ========================================================================== */
+    function updatePlayerPawns() {
+      const { coords, cols, rows } = generateSpiralGridPositions(100);
+      const tileWidthPct = 100 / cols;
+      const tileHeightPct = 100 / rows;
+
+      // Group players by current tile to offset overlapping pawns
+      const tileOccupancy = {};
+      players.forEach(p => {
+        if (!p.finished) {
+          tileOccupancy[p.tile] = tileOccupancy[p.tile] || [];
+          tileOccupancy[p.tile].push(p.id);
+        } else {
+          // Hide finished pawns inside tile 100 center
+          const pawnEl = document.getElementById(`pawn-${p.id}`);
+          if (pawnEl) pawnEl.style.opacity = '0.3';
+        }
+      });
+
+      players.forEach(p => {
+        const pawnEl = document.getElementById(`pawn-${p.id}`);
+        if (!pawnEl) return;
+
+        const pos = coords[p.tile - 1];
+        if (!pos) return;
+
+        const tileLeft = pos.c * tileWidthPct;
+        const tileTop = pos.r * tileHeightPct;
+
+        // Offset calculation if multiple pawns share a tile
+        const occupants = tileOccupancy[p.tile] || [];
+        const occIndex = occupants.indexOf(p.id);
+        let offsetX = 0;
+        let offsetY = 0;
+
+        if (occupants.length > 1) {
+          offsetX = (occIndex % 2) * 10 - 5;
+          offsetY = Math.floor(occIndex / 2) * 10 - 5;
+        }
+
+        pawnEl.style.left = `calc(${tileLeft + tileWidthPct / 2}% + ${offsetX}px - 11px)`;
+        pawnEl.style.top = `calc(${tileTop + tileHeightPct / 2}% + ${offsetY}px - 11px)`;
+      });
+    }
+
+    /* ==========================================================================
+       7. TURN & GAMEPLAY LOGIC
+       ========================================================================== */
+    function playTurn() {
+      if (isRolling) return;
+
+      const p = players[currentPlayerIndex];
+
+      // Handle Skip Turns (Prison)
+      if (p.skipTurns > 0) {
+        p.skipTurns--;
+        setAnnouncement('🗝️🔒', `${p.name.toUpperCase()} EST EN PRISON ! TORS RESTANTS À SAUTER : ${p.skipTurns}`);
+        nextTurn();
+        return;
+      }
+
+      isRolling = true;
+      document.getElementById('roll-btn').disabled = true;
+
+      // Animate Dice Rolling
+      let rolls = 0;
+      const dice1El = document.getElementById('dice1-val');
+      const dice2El = document.getElementById('dice2-val');
+
+      const rollInterval = setInterval(() => {
+        dice1El.innerText = Math.floor(Math.random() * 6) + 1;
+        dice2El.innerText = Math.floor(Math.random() * 6) + 1;
+        rolls++;
+
+        if (rolls > 10) {
+          clearInterval(rollInterval);
+          
+          const d1 = Math.floor(Math.random() * 6) + 1;
+          const d2 = Math.floor(Math.random() * 6) + 1;
+          const total = d1 + d2;
+
+          dice1El.innerText = d1;
+          dice2El.innerText = d2;
+
+          executeMove(p, total);
+        }
+      }, 60);
+    }
+
+    function executeMove(player, diceSum) {
+      let targetTile = player.tile + diceSum;
+
+      // Rule: Bounce back if over 100
+      if (targetTile > 100) {
+        const excess = targetTile - 100;
+        targetTile = 100 - excess;
+        setAnnouncement('🔀', `${player.name.toUpperCase()} DÉPASSE LA CASE 100 ET RECUL EN 100 - ${excess} = CASE ${targetTile} !`);
+      } else {
+        setAnnouncement('🎲', `${player.name.toUpperCase()} AVANCE DE ${diceSum} CASES (DÉS : ${diceSum}) !`);
+      }
+
+      // Smooth step movement
+      animateMovement(player, targetTile, () => {
+        // Handle Tile effects after pawn arrives
+        handleTileEffect(player);
+      });
+    }
+
+    function animateMovement(player, targetTile, onComplete) {
+      const step = player.tile < targetTile ? 1 : -1;
+      
+      const interval = setInterval(() => {
+        if (player.tile === targetTile) {
+          clearInterval(interval);
+          if (onComplete) onComplete();
+          return;
+        }
+        player.tile += step;
+        updatePlayerPawns();
+      }, 180);
+    }
+
+    function handleTileEffect(player) {
+      const currentTile = player.tile;
+
+      // Victory Check (Tile 100)
+      if (currentTile === 100) {
+        player.finished = true;
+        finishedRankings.push(player);
+        player.rank = finishedRankings.length;
+
+        setAnnouncement('👑', `VICTOIRE DE ${player.name.toUpperCase()} ! IL ATTEINT LE PALACE !`);
+
+        // Check active players count
+        const activePlayers = players.filter(p => !p.finished);
+
+        if (activePlayers.length <= 1) {
+          // If 1 or 0 player left, game ends!
+          if (activePlayers.length === 1) {
+            finishedRankings.push(activePlayers[0]);
+            activePlayers[0].rank = finishedRankings.length;
+            activePlayers[0].finished = true;
+          }
+          endGame();
+          return;
+        } else {
+          // Continue game for remaining players
+          setTimeout(() => {
+            isRolling = false;
+            document.getElementById('roll-btn').disabled = false;
+            nextTurn();
+          }, 1800);
+          return;
+        }
+      }
+
+      // Special Malus & Bonus Tiles
+      const special = SPECIAL_TILES[currentTile];
+
+      if (special) {
+        setTimeout(() => {
+          setAnnouncement(special.icon, `${player.name.toUpperCase()} : ${special.name.toUpperCase()} ! ${special.desc.toUpperCase()}`);
+
+          if (special.type === 'prison') {
+            player.skipTurns = 2;
+            finishTurn();
+          } else if (special.type === 'back_2') {
+            const destination = Math.max(1, player.tile - 2);
+            animateMovement(player, destination, () => finishTurn());
+          } else if (special.type === 'back_start') {
+            animateMovement(player, 1, () => finishTurn());
+          } else if (special.type === 'forward_2') {
+            const destination = Math.min(100, player.tile + 2);
+            animateMovement(player, destination, () => handleTileEffect(player));
+          } else if (special.type === 'reroll') {
+            isRolling = false;
+            document.getElementById('roll-btn').disabled = false;
+            updateSidebar();
+          }
+        }, 600);
+      } else {
+        finishTurn();
+      }
+    }
+
+    function finishTurn() {
+      setTimeout(() => {
+        isRolling = false;
+        document.getElementById('roll-btn').disabled = false;
+        nextTurn();
+      }, 1000);
+    }
+
+    function nextTurn() {
+      // Find next active player
+      let loopCount = 0;
+      do {
+        currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+        loopCount++;
+      } while (players[currentPlayerIndex].finished && loopCount <= players.length);
+
+      updateCurrentTurnUI();
+      updateSidebar();
+    }
+
+    /* ==========================================================================
+       8. UI & ANNOUNCEMENTS UPDATES
+       ========================================================================== */
+    function setAnnouncement(icon, message) {
+      const iconEl = document.getElementById('announcement-icon');
+      const textEl = document.getElementById('announcement-text');
+      const cardEl = document.getElementById('announcement-card');
+
+      iconEl.innerText = icon;
+      textEl.innerText = message;
+
+      cardEl.classList.remove('announcement-active');
+      void cardEl.offsetWidth; // Trigger reflow for animation restart
+      cardEl.classList.add('announcement-active');
+    }
+
+    function updateCurrentTurnUI() {
+      const p = players[currentPlayerIndex];
+      if (!p) return;
+
+      const badge = document.getElementById('current-player-badge');
+      const nameEl = document.getElementById('current-player-name');
+
+      badge.innerText = p.id + 1;
+      badge.style.backgroundColor = p.color.hex;
+      nameEl.innerText = p.name;
+    }
+
+    function updateSidebar() {
+      const container = document.getElementById('players-list-sidebar');
+      container.innerHTML = '';
+
+      players.forEach((p, idx) => {
+        const isTurn = idx === currentPlayerIndex && !p.finished;
+        const div = document.createElement('div');
+        div.className = `p-2.5 rounded-xl border transition flex items-center justify-between text-xs font-semibold ${
+          isTurn ? 'bg-hotel-blueLight border-hotel-blueSoft shadow-sm scale-[1.02]' : 'bg-white border-slate-200 opacity-85'
+        }`;
+
+        let statusText = `Case ${p.tile}`;
+        if (p.finished) statusText = `🏆 #${p.rank} Arrivé`;
+        else if (p.skipTurns > 0) statusText = `🔒 Prison (${p.skipTurns}t)`;
+
+        div.innerHTML = `
+          <div class="flex items-center gap-2 truncate">
+            <span class="w-5 h-5 rounded-full ${p.color.bg} text-white flex items-center justify-center font-bold text-[10px]">
+              ${p.id + 1}
+            </span>
+            <span class="truncate max-w-[90px] ${isTurn ? 'font-bold text-hotel-blueRoyal' : 'text-slate-700'}">${p.name}</span>
+          </div>
+          <span class="px-2 py-0.5 rounded-md ${p.finished ? 'bg-amber-100 text-amber-700 font-bold' : 'bg-slate-100 text-slate-600'}">
+            ${statusText}
+          </span>
+        `;
+
+        container.appendChild(div);
+      });
+    }
+
+    /* ==========================================================================
+       9. GAME END & VICTORY SCREEN
+       ========================================================================== */
+    function endGame() {
+      const modal = document.getElementById('victory-modal');
+      const rankingList = document.getElementById('final-ranking-list');
+      rankingList.innerHTML = '';
+
+      finishedRankings.forEach((p, index) => {
+        const li = document.createElement('li');
+        li.className = 'flex items-center justify-between p-2 rounded-lg bg-white border border-slate-200 shadow-sm';
+        
+        let medal = `#${index + 1}`;
+        if (index === 0) medal = '🥇 1er';
+        if (index === 1) medal = '🥈 2ème';
+        if (index === 2) medal = '🥉 3ème';
+
+        li.innerHTML = `
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-hotel-blueRoyal w-12">${medal}</span>
+            <span class="w-3 h-3 rounded-full ${p.color.bg}"></span>
+            <span>${p.name}</span>
+          </div>
+          <span class="text-xs text-slate-400">Arrivé</span>
+        `;
+        rankingList.appendChild(li);
+      });
+
+      modal.classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>
