@@ -1,0 +1,14 @@
+pourrais tu me créer un prompt complet ( sans te limiter dans le nombre de caratère de ton prompt) pour pouvoir ensuite ( grace au prompt) le jeu de l'oie ( le code doit etre en html).
+Voici quelques critères a prendre en compte :
+- le theme du jeu : hotel couleur blanc, bleu et rose
+- ne marques pas l'historique des coups 
+- annonce a qui est le tour que jouer et affiche en grand toute les petites annonces
+- le debut de la partie debute en haut a gauche du plateau et se termine au centre du plateau ( le chemin est une spiral en forme de d'ovale) 
+- Faire un plateau qui contient au moins 100 cases 
+- nombre de joueurs ( 2 a 10)
+- deux dés par joueur
+- possibilité de reculer quand le joueur a dépasser la case 100
+- des cases malusse ( prison ( saute son tour pendant 2 tours), recule de 2 cases, retourne a la case départ)
+- des cases bonus ( avance de 2 cases, relancer les dés )
+- Les cases doivent se toucher entre elles et etre dans l'ordre numérique mais elles ne doivent pas se chevauchées et doivent contenir des images en rapport au nom de la case
+- La partie s'arrete seulement quand il ne reste plus qu'un joueur 
